@@ -18,7 +18,7 @@ import com.intellectualcrafters.plot.util.MainUtil;
 import com.intellectualcrafters.plot.util.TaskManager;
 
 public class ChunkPlotManager extends GridPlotManager{
-
+	
 	@Override
 	public boolean claimPlot(PlotWorld arg0, Plot arg1) {
 		return true;
