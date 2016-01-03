@@ -1,10 +1,14 @@
 package com.oneshotmc.chunkmarkgen;
 
+import com.intellectualcrafters.configuration.ConfigurationSection;
 import com.intellectualcrafters.plot.config.ConfigurationNode;
 import com.intellectualcrafters.plot.generator.ClassicPlotWorld;
+import com.intellectualcrafters.plot.generator.GridPlotWorld;
 
-public class MarkPlotWorld extends ClassicPlotWorld{
-
+public class MarkPlotWorld extends GridPlotWorld{
+	public int ROAD_WIDTH;
+    public int PLOT_WIDTH;
+    public int PLOT_HEIGHT;
 	public MarkPlotWorld(String worldname) {
 		super(worldname);
 		this.PLOT_WIDTH=16*32;
@@ -16,7 +20,12 @@ public class MarkPlotWorld extends ClassicPlotWorld{
 	
 	@Override
     public ConfigurationNode[] getSettingNodes() {
-        return new ConfigurationNode[]{};
+        return new ConfigurationNode[0];
+    }
+	
+	@Override
+    public void loadConfiguration(final ConfigurationSection arg0) {
+        // Nothing is configurable :P
     }
 
 }
