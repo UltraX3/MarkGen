@@ -2,20 +2,18 @@ package com.oneshotmc.chunkmarkgen;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.mutable.MutableInt;
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.World;
 
-import com.intellectualcrafters.plot.PS;
 import com.intellectualcrafters.plot.generator.GridPlotManager;
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
 import com.intellectualcrafters.plot.object.PlotBlock;
 import com.intellectualcrafters.plot.object.PlotId;
 import com.intellectualcrafters.plot.object.PlotWorld;
+import com.intellectualcrafters.plot.object.RunnableVal;
+import com.intellectualcrafters.plot.util.ChunkManager;
 import com.intellectualcrafters.plot.util.MainUtil;
-import com.intellectualcrafters.plot.util.TaskManager;
+import com.plotsquared.bukkit.util.BukkitUtil;
 
 public class ChunkPlotManager extends GridPlotManager{
 	
@@ -24,39 +22,18 @@ public class ChunkPlotManager extends GridPlotManager{
 		return true;
 	}
 	
-	private int chunkLoc(Integer val){
-		return val >> 4;
-	}
 	@Override
 	public boolean clearPlot(final PlotWorld plotworld, final Plot plot, final Runnable whenDone) {
 		Location bottom = MainUtil.getPlotBottomLocAbs(plotworld.worldname, plot.getId());
 		Location top = MainUtil.getPlotTopLocAbs(plotworld.worldname, plot.getId());
-		final ArrayList<ChunkLoc> chunks = new ArrayList<>();
-		for(int x=chunkLoc(bottom.getX());x<=chunkLoc(top.getX());x++){
-			for(int z=chunkLoc(bottom.getZ());z<=chunkLoc(top.getZ());z++){
-				chunks.add(new ChunkLoc(x,z));
-			}
-		}
-		final World world = Bukkit.getWorld(plotworld.worldname);
-		final MutableInt id = new MutableInt(0);
-        id.setValue(TaskManager.runTaskRepeat(new Runnable() {
+        final World world = BukkitUtil.getWorld(plotworld.worldname);
+        ChunkManager.chunkTask(bottom, top, new RunnableVal<int[]>() {
+
             @Override
             public void run() {
-                if (chunks.size() == 0) {
-                    Bukkit.getScheduler().cancelTask(id.intValue());
-                    MainUtil.update(plot);
-                    whenDone.run();
-                    return;
-                }
-                final long start = System.currentTimeMillis();
-                while (((System.currentTimeMillis() - start) < 25) && (chunks.size() > 0)) {
-                    final ChunkLoc loc = chunks.remove(0);
-                    if (world.loadChunk(loc.x, loc.z, false)) {
-                        world.regenerateChunk(loc.x, loc.z);
-                    }
-                }
+                world.regenerateChunk(value[0], value[1]);
             }
-        }, 1));
+        }, whenDone, 5);
         return true;
 	}
 	
@@ -98,16 +75,16 @@ public class ChunkPlotManager extends GridPlotManager{
 
 	@Override
 	public String[] getPlotComponents(PlotWorld arg0, PlotId arg1) {
-		// TODO Auto-generated method stub
-		return new String[] { "floor", "wall", "border" };
+        // TODO Auto-generated method stub
+        return new String[] {};
 	}
 
 	@Override
 	public PlotId getPlotId(PlotWorld pw, int x, int y, int z) {
 		MarkPlotWorld mpw = (MarkPlotWorld)pw;
-		int size = mpw.PLOT_WIDTH+mpw.ROAD_WIDTH;
-		int X= x / size;
-		int Z =z /size;
+        int size = mpw.PLOT_WIDTH + mpw.ROAD_WIDTH;
+        int X = x / size;
+        int Z = z / size;
 		if (x >= 0) {
             X++;
         }
@@ -131,7 +108,7 @@ public class ChunkPlotManager extends GridPlotManager{
             lower = (mpw.ROAD_WIDTH / 2);
         }
 		
-		if(px < lower || px > mpw.PLOT_WIDTH+lower){
+        if (px < lower || px > mpw.PLOT_WIDTH + lower || pz < lower || pz > mpw.PLOT_WIDTH + lower) {
 			return null;
 		}
 		//Since we know it MUST be in plot boundries
@@ -141,7 +118,7 @@ public class ChunkPlotManager extends GridPlotManager{
 	@Override
 	public Location getPlotTopLocAbs(PlotWorld pw, PlotId id) {
 		int px = id.x;
-		//Should be id.z :p
+        //Should be id.z :p - No it shouldn't, there are only two axis for plot ids, it's not the same system as world block coordinates.
 		int pz = id.y;
 		final MarkPlotWorld mpw = (MarkPlotWorld) pw;
 		final int x = (px * (mpw.ROAD_WIDTH + mpw.PLOT_WIDTH)) - ((int) Math.floor(mpw.ROAD_WIDTH / 2)) - 1;
@@ -200,26 +177,7 @@ public class ChunkPlotManager extends GridPlotManager{
 
 	@Override
 	public PlotId getPlotIdAbs(PlotWorld pw, int x, int y, int z) {
-		MarkPlotWorld mpw = (MarkPlotWorld) pw;
-		int size = mpw.PLOT_WIDTH+mpw.ROAD_WIDTH;
-		int X= x / size;
-		int Z =z /size;
-		if (x >= 0) {
-            X++;
-        }
-        if (z >= 0) {
-            Z++;
-        }
-		int px = x % size;
-		int pz = z % size;
-		//Since don't start at 0
-		if(px>=0){
-			px++;
-		}
-		if(pz>=0){
-			pz++;
-		}
-		return new PlotId(X,Z);
+        return getPlotId(pw, x, y, z);
 	}
 
 }
